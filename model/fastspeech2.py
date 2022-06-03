@@ -44,11 +44,11 @@ class FastSpeech2(nn.Module):
         self,
         speakers,
         texts,
-        src_lens,
-        max_src_len,
+        text_lens,
+        max_text_lens,
         mels=None,
         mel_lens=None,
-        max_mel_len=None,
+        max_mel_lens=None,
         p_targets=None,
         e_targets=None,
         d_targets=None,
@@ -56,9 +56,9 @@ class FastSpeech2(nn.Module):
         e_control=1.0,
         d_control=1.0,
     ):
-        src_masks = get_mask_from_lengths(src_lens, max_src_len)
+        src_masks = get_mask_from_lengths(text_lens, max_text_lens)
         mel_masks = (
-            get_mask_from_lengths(mel_lens, max_mel_len)
+            get_mask_from_lengths(mel_lens, max_mel_lens)
             if mel_lens is not None
             else None
         )
@@ -67,7 +67,7 @@ class FastSpeech2(nn.Module):
 
         if self.speaker_emb is not None:
             output = output + self.speaker_emb(speakers).unsqueeze(1).expand(
-                -1, max_src_len, -1
+                -1, max_text_lens, -1
             )
 
         (
@@ -82,7 +82,7 @@ class FastSpeech2(nn.Module):
             output,
             src_masks,
             mel_masks,
-            max_mel_len,
+            max_mel_lens,
             p_targets,
             e_targets,
             d_targets,
@@ -105,6 +105,6 @@ class FastSpeech2(nn.Module):
             d_rounded,
             src_masks,
             mel_masks,
-            src_lens,
+            text_lens,
             mel_lens,
         )

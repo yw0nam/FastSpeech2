@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 from torch.utils.data import Dataset
-
+import torch 
 from text import text_to_sequence
 from utils.tools import pad_1D, pad_2D
 
@@ -16,7 +16,6 @@ class Dataset(Dataset):
         self.dataset_name = preprocess_config["dataset"]
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
         self.cleaners = preprocess_config["preprocessing"]["text"]["text_cleaners"]
-        self.batch_size = train_config["optimizer"]["batch_size"]
 
         self.basename, self.speaker, self.text, self.raw_text = self.process_meta(
             filename
@@ -109,21 +108,23 @@ class Dataset(Dataset):
         energies = pad_1D(energies)
         durations = pad_1D(durations)
 
-        return (
-            ids,
-            raw_texts,
-            speakers,
-            texts,
-            text_lens,
-            max(text_lens),
-            mels,
-            mel_lens,
-            max(mel_lens),
-            pitches,
-            energies,
-            durations,
-        )
-
+        meta_data = {
+            'ids' : ids,
+            'raw_texts' : raw_texts,
+        }
+        inputs = {
+            'speakers': torch.LongTensor(speakers),
+            'texts' :torch.LongTensor(texts),
+            'text_lens': torch.LongTensor(text_lens),
+            'max_text_lens' :max(text_lens),
+            'mels' : torch.FloatTensor(mels),
+            'mel_lens' : torch.LongTensor(mel_lens),
+            'max_mel_lens' : max(mel_lens),
+            'p_targets' : torch.FloatTensor(pitches),
+            'e_targets' : torch.FloatTensor(energies),
+            'd_targets': torch.LongTensor(durations),
+        }
+        return meta_data, inputs
     def collate_fn(self, data):
         data_size = len(data)
 
@@ -133,17 +134,9 @@ class Dataset(Dataset):
         else:
             idx_arr = np.arange(data_size)
 
-        tail = idx_arr[len(idx_arr) - (len(idx_arr) % self.batch_size) :]
-        idx_arr = idx_arr[: len(idx_arr) - (len(idx_arr) % self.batch_size)]
-        idx_arr = idx_arr.reshape((-1, self.batch_size)).tolist()
-        if not self.drop_last and len(tail) > 0:
-            idx_arr += [tail.tolist()]
+        meta_data, inputs = self.reprocess(data, idx_arr)
 
-        output = list()
-        for idx in idx_arr:
-            output.append(self.reprocess(data, idx))
-
-        return output
+        return meta_data, inputs
 
 
 class TextDataset(Dataset):
