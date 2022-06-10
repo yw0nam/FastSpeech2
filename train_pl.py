@@ -10,10 +10,10 @@ import yaml
 from dataset import Dataset
 
 
-save_path = './model_weights/TTS/fast_speech/'
+save_path = './model_weights/'
 ckp_path = os.path.join(save_path, 'checkpoint')
 log_path = os.path.join(save_path, 'tensorboard')
-exp_name = 'LJspeech'
+exp_name = 'LJspeech_modify_schedule_3'
 
 def main(train_config, preprocess_config, model_config):
     pl.seed_everything(42)
@@ -68,7 +68,7 @@ def main(train_config, preprocess_config, model_config):
     trainer = pl.Trainer(
         accelerator="gpu",
         devices=num_gpu,
-        strategy="ddp_sharded",
+        strategy="deepspeed_stage_2",
         max_steps=train_config['step']['total_step'],
         enable_checkpointing=True,
         callbacks=[checkpoint_callback, lr_monitor],

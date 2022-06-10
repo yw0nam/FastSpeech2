@@ -158,7 +158,7 @@ def synth_one_sample(basename, targets, predictions, vocoder, model_config, prep
     else:
         wav_reconstruction = wav_prediction = None
 
-    return fig, wav_reconstruction, wav_prediction, basename[0]
+    return fig, wav_reconstruction, wav_prediction, basename
 
 
 def synth_samples(targets, predictions, vocoder, model_config, preprocess_config, path):
@@ -258,7 +258,7 @@ def plot_mel(data, stats, titles):
             right=True,
             labelright=True,
         )
-
+    plt.close()
     return fig
 
 

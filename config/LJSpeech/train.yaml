@@ -12,10 +12,11 @@ optimizer:
   warm_up_step: 4000
   anneal_steps: [200000, 300000, 400000]
   anneal_rate: 0.3
-  lr: 0.005
+  lr: 0.001
 step:
-  total_step: 500000
+  total_step: 25000
+  warm_up_step: 2500
   log_step: 100
   synth_step: 1000
   val_step: 1000
-  save_step: 100000
+  save_step: 10000

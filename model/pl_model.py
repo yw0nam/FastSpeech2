@@ -7,7 +7,7 @@ from .loss import FastSpeech2Loss
 import matplotlib.pyplot as plt
 from utils.model import get_vocoder
 from utils.tools import synth_one_sample
-
+from transformers import get_cosine_with_hard_restarts_schedule_with_warmup
 class PL_model(pl.LightningModule):
     def __init__(self, train_config, preprocess_config, model_config):
         super().__init__()
@@ -19,7 +19,6 @@ class PL_model(pl.LightningModule):
         
         self.model = FastSpeech2(preprocess_config, model_config)
         self.loss = FastSpeech2Loss(preprocess_config, model_config)
-        self.vocoder = get_vocoder(model_config, 'cpu')
         self.draw_step = 0
         
     def forward(self, data):
@@ -56,15 +55,17 @@ class PL_model(pl.LightningModule):
     
     def validation_epoch_end(self, validation_step_outputs):
         if self.draw_step <= self.global_step:
+            vocoder = get_vocoder(self.model_config, 'cuda')
             meta, inputs, preds = validation_step_outputs[0]
             fig, wav_reconstruction, wav_prediction, tag = synth_one_sample(
                 meta['ids'][0],
                 inputs,
                 preds,
-                self.vocoder,
+                vocoder,
                 self.model_config,
                 self.preprocess_config,
             )
+            
             self.logger.experiment.add_figure(
                 "Training/step_{}_{}".format(self.global_step, tag), fig, self.global_step)
             
@@ -88,5 +89,11 @@ class PL_model(pl.LightningModule):
             weight_decay=self.train_config["optimizer"]["weight_decay"],
             lr=self.train_config["optimizer"]['lr']
         )
-        scheduler = ScheduledOptim(optimizer, self.train_config)
+        # scheduler = ScheduledOptim(optimizer, self.train_config)
+        scheduler = get_cosine_with_hard_restarts_schedule_with_warmup(
+            optimizer=optimizer,
+            num_training_steps=self.train_config['step']['total_step'],
+            num_warmup_steps=self.train_config['step']['warm_up_step'],
+            num_cycles=1
+        )
         return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
