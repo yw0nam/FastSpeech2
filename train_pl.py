@@ -5,15 +5,15 @@ import pytorch_lightning.callbacks as plc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 from pytorch_lightning.callbacks import LearningRateMonitor
-from pytorch_lightning.strategies.ddp import DDPStrategy
+# from pytorch_lightning.strategies import DDPStrategy
 import yaml
 from dataset import Dataset
-
+import tensorflow as tf
 
 save_path = './model_weights/'
 ckp_path = os.path.join(save_path, 'checkpoint')
 log_path = os.path.join(save_path, 'tensorboard')
-exp_name = 'LJspeech_modify_schedule_3'
+exp_name = 'KSS_modify_schedule_3'
 
 def main(train_config, preprocess_config, model_config):
     pl.seed_everything(42)
@@ -68,7 +68,7 @@ def main(train_config, preprocess_config, model_config):
     trainer = pl.Trainer(
         accelerator="gpu",
         devices=num_gpu,
-        strategy="deepspeed_stage_2",
+        strategy="ddp",
         max_steps=train_config['step']['total_step'],
         enable_checkpointing=True,
         callbacks=[checkpoint_callback, lr_monitor],
@@ -83,12 +83,12 @@ def main(train_config, preprocess_config, model_config):
     
 if __name__ == '__main__':
     train_config = yaml.load(
-        open("./config/LJSpeech/train.yaml", "r"), Loader=yaml.FullLoader
+        open("./config/KSS/train.yaml", "r"), Loader=yaml.FullLoader
     )
     preprocess_config = yaml.load(
-        open("./config/LJSpeech/preprocess.yaml", "r"), Loader=yaml.FullLoader
+        open("./config/KSS/preprocess.yaml", "r"), Loader=yaml.FullLoader
     )
     model_config = yaml.load(
-        open("./config/LJSpeech/model.yaml", "r"), Loader=yaml.FullLoader
+        open("./config/KSS/model.yaml", "r"), Loader=yaml.FullLoader
     )
     main(train_config, preprocess_config, model_config)
